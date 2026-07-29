@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Expense Tracker — Demo</title>
+<style>
+  :root {
+    --background: #020617;
+    --card: #0F172A;
+    --border: #1E293B;
+    --primary: #3B82F6;
+    --text: #E2E8F0;
+    --muted: #64748B;
+    --success: #22C55E;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px; flex-shrink: 0; border-right: 1px solid var(--border);
+    padding: 24px 16px; position: sticky; top: 0; height: 100vh;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px 28px; font-weight: 600; }
+  .brand .icon {
+    width: 34px; height: 34px; border-radius: 10px; background: rgba(59,130,246,.15);
+    display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 16px;
+  }
+  .nav a {
+    display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 4px;
+    border-radius: 10px; color: var(--muted); text-decoration: none; font-size: 14px;
+  }
+  .nav a.active { background: rgba(59,130,246,.15); color: var(--primary); font-weight: 500; }
+  .nav a:hover:not(.active) { background: rgba(255,255,255,.05); color: var(--text); }
+  .main { flex: 1; min-width: 0; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 32px; border-bottom: 1px solid var(--border);
+  }
+  .crumb { font-size: 12px; color: var(--muted); }
+  .title { font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .content { padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
+  .row { display: grid; gap: 24px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 2fr 1fr; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; box-shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+  .card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 500; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .pill { font-size: 11px; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; padding-bottom: 10px; }
+  td { padding: 10px 0; border-top: 1px solid var(--border); }
+  .badge { font-size: 11px; background: rgba(59,130,246,.12); color: var(--primary); padding: 3px 8px; border-radius: 8px; }
+  .status { display: inline-flex; align-items: center; gap: 5px; color: var(--success); font-size: 12px; }
+  .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+  .radial-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+  .radial {
+    width: 170px; height: 170px; border-radius: 50%;
+    background: conic-gradient(var(--primary) calc(var(--pct) * 1%), var(--border) 0);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .radial::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; background: var(--card); }
+  .radial-inner { position: relative; text-align: center; }
+  .radial-inner .pct { font-size: 30px; font-weight: 600; }
+  .radial-inner .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .target-box {
+    margin-top: 16px; width: 100%; background: var(--background); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; font-size: 13px;
+  }
+  .insight { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 10px; }
+  .insight.info { background: rgba(59,130,246,.1); color: var(--text); }
+  .insight.warning { background: rgba(245,158,11,.1); color: var(--text); }
+  .insight.success { background: rgba(34,197,94,.1); color: var(--text); }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .legend span.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .demo-banner {
+    background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); color: #93C5FD;
+    padding: 10px 32px; font-size: 12.5px;
+  }
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .row-2, .row-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="demo-banner">
+  Static demo — populated with your monthy-spend.xlsx data (Food ₹551, Saloon ₹710, budget ₹11,000). Not connected to a live database.
+</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="icon">₹</span> ExpenseTracker</div>
+    <nav class="nav">
+      <a class="active" href="#">Dashboard</a>
+      <a href="#">Expenses</a>
+      <a href="#">Reports</a>
+      <a href="#">Cards</a>
+      <a href="#">Settings</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="crumb">Dashboard &rsaquo; Overview</div>
+        <div class="title">Dashboard</div>
+      </div>
+      <div class="pill">you@example.com</div>
+    </div>
+
+    <div class="content">
+      <div class="row row-2">
+        <div class="card">
+          <div class="card-head"><h3>Monthly spend</h3><span class="pill">Aug 2026</span></div>
+          <div class="radial-wrap">
+            <div class="radial" style="--pct:11">
+              <div class="radial-inner"><div class="pct">11%</div><div class="sub">Spent: ₹1,261</div></div>
+            </div>
+          </div>
+          <div class="target-box"><span style="color:var(--muted)">Budget target</span><span>₹11,000</span></div>
+        </div>
+
+        <div class="card">
+          <h3>Recent transactions</h3>
+          <table>
+            <thead><tr><th>Description</th><th>Category</th><th>Date</th><th style="text-align:right">Amount</th></tr></thead>
+            <tbody>
+              <tr><td>Malabar bites</td><td><span class="badge">Food</span></td><td>Aug 28</td><td style="text-align:right">₹353</td></tr>
+              <tr><td>minni</td><td><span class="badge">Saloon</span></td><td>Aug 28</td><td style="text-align:right">₹460</td></tr>
+              <tr><td>suhail</td><td><span class="badge">Saloon</span></td><td>Aug 28</td><td style="text-align:right">₹250</td></tr>
+              <tr><td>cake</td><td><span class="badge">Food</span></td><td>Aug 28</td><td style="text-align:right">₹198</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="row row-3">
+        <div class="card">
+          <h3>Category spending</h3>
+          <div style="height:220px; position:relative;">
+            <canvas id="catChart" role="img" aria-label="Bar chart of spending by category: Food 551, Saloon 710, all other categories 0"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Smart insights</h3>
+          <div class="insight success">You've used 11% of your monthly budget — comfortably on track.</div>
+          <div class="insight info">Safe to spend about ₹485 per day for the rest of the month.</div>
+          <div class="insight warning">Saloon is your top category so far — ₹710 of ₹1,261 spent.</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div class="card">
+          <h3>Spending trend</h3>
+          <div style="height:220px; position:relative;">
+            <canvas id="trendChart" role="img" aria-label="Line chart of daily spending trend, most days at zero with a spike on August 28th"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Budget breakdown</h3>
+          <div style="height:220px; position:relative;">
+            <canvas id="donutChart" role="img" aria-label="Donut chart showing Saloon 710 rupees and Food 551 rupees of total spend"></canvas>
+          </div>
+          <div class="legend">
+            <span><span class="dot" style="background:#3B82F6"></span>Saloon</span>
+            <span><span class="dot" style="background:#93C5FD"></span>Food</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const gridColor = "#1E293B";
+  const mutedColor = "#64748B";
+  const textColor = "#E2E8F0";
+
+  new Chart(document.getElementById('catChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Saloon', 'Food', 'Car', 'Utilities', 'Bike', 'Medical'],
+      datasets: [{ data: [710, 551, 0, 0, 0, 0], backgroundColor: '#3B82F6', borderRadius: 6, barThickness: 16 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: mutedColor } },
+        y: { grid: { display: false }, ticks: { color: textColor } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: ['Aug 22','Aug 23','Aug 24','Aug 25','Aug 26','Aug 27','Aug 28'],
+      datasets: [{ data: [0,0,0,0,0,0,1261], borderColor: '#3B82F6', backgroundColor: 'rgba(59,130,246,.1)', fill: true, tension: .3, pointRadius: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: mutedColor } },
+        y: { grid: { color: gridColor }, ticks: { color: mutedColor } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Saloon', 'Food'],
+      datasets: [{ data: [710, 551], backgroundColor: ['#3B82F6', '#93C5FD'], borderColor: '#0F172A', borderWidth: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
+</body>
+</html>
