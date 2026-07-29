@@ -1,4 +1,4 @@
-const CACHE_NAME = "expense-tracker-v2";
+const CACHE_NAME = "expense-tracker-v3";
 const APP_SHELL = ["/dashboard", "/manifest.json", "/offline.html"];
 
 self.addEventListener("install", (event) => {
@@ -22,12 +22,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-
-        return caches.match("/offline.html");
-      })
+      fetch(new Request(event.request))
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          return cached || caches.match("/offline.html");
+        })
     );
   }
 });
