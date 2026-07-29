@@ -22,11 +22,12 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(
-        () =>
-          caches.match(event.request).then((cached) => cached) ||
-          caches.match("/offline.html")
-      )
+      fetch(event.request).catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+
+        return caches.match("/offline.html");
+      })
     );
   }
 });

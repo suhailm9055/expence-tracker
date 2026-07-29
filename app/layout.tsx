@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: "Expense Tracker | Financial Dashboard",
   description: "Track your spending, budgets, and financial insights.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/sample-data/expence.png",
+    apple: "/sample-data/expence.png",
+  },
 };
 
 export const viewport: Viewport = {
